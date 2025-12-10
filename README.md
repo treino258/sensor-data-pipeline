@@ -4,6 +4,7 @@
  
 ![tests](https://img.shields.io/badge/tests-pytest-blue) ![license](https://img.shields.io/badge/license-MIT-lightgrey)
   
+![build](https://github.com/treino258/sensor-data-pipeline/actions/workflows/tests.yml/badge.svg)
 
 
 ## 🧠 Visão Geral
