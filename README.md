@@ -1,143 +1,136 @@
-📡 Sensor Data Processing Pipeline
-✨ Pipeline profissional com arquitetura limpa, testes unitários e processamento determinístico.
+# 📡 Sensor Data Processing Pipeline
+### Pipeline profissional para leitura, limpeza, validação e normalização de dados de sensores  
+![status](https://img.shields.io/badge/status-stable-brightgreen)  ![python](https://img.shields.io/badge/python-3.10%2B-blue)
+ 
+![tests](https://img.shields.io/badge/tests-pytest-blue) ![license](https://img.shields.io/badge/license-MIT-lightgrey)
+  
 
-Este projeto implementa um pipeline completo para leitura, limpeza, validação e normalização de dados de sensores — seguindo padrões profissionais de Engenharia de Software e MLOps.
 
-Ele foi construído com foco em:
+## 🧠 Visão Geral
+Este projeto implementa um pipeline completo, modular e profissional para processamento de dados de sensores.
 
-modularidade
+Ele segue padrões reais de engenharia usados em MLOps, Sistemas de telemetria, Edge AI, Observabilidade e pré-processamento para ML.
 
-testabilidade
+O sistema recebe leituras brutas e passa por 4 estágios:
+1. Carregamento do arquivo  
+2. Limpeza  
+3. Parsing e validação  
+4. Normalização
 
-previsibilidade
+---
 
-logging estruturado
+## ⚙️ Arquitetura
+```
+core/
+│── load.py
+│── clean.py
+│── parse.py
+│── normalize.py
+│── process.py
+tests/
+│── test_clean.py
+│── test_parse.py
+│── test_normalize.py
+│── test_process.py
+sample_data/
+│── sensor.txt
+```
 
-arquitetura limpa
+---
 
-separação rígida de responsabilidades
+## 🔍 Etapas do Pipeline
 
-🚀 Arquitetura do Pipeline
+### 1️⃣ load_file — Leitura segura  
+- valida existência  
+- valida arquivo vazio  
+- abre em UTF-8  
+- não altera conteúdo  
 
-O sistema segue 4 etapas independentes:
+### 2️⃣ clean_lines — Limpeza determinística  
+- remove espaços  
+- remove linhas vazias  
+- preserva ordem  
 
-1. load_file → leitura do arquivo bruto
+### 3️⃣ parse_lines_data — Validação sintática  
+Valida:
+- 1 "="  
+- chave não vazia  
+- valor não vazio  
+- float válido  
+- formato chave=valor  
 
-valida existência
+Retorna `valid_readings` e `errors`.
 
-valida tamanho
-
-usa encoding correto
-
-não modifica nada
-
-retorna apenas as linhas
-
-2. clean_lines → limpeza determinística
-
-remove linhas vazias
-
-remove ruídos simples
-
-preserva ordem
-
-função pura
-
-3. parse_lines_data → validação sintática
-
-Valida cada linha garantindo:
-
-exatamente 1 "="
-
-chave não vazia
-
-valor não vazio
-
-valor convertível para float
-
-padrão correto “chave=valor”
-
-Retorna:
-
-valid_readings
-
-errors com códigos como:
-
-expected_single_equal
-
-empty_key
-
-empty_value
-
-invalid_float_value
-
-4. normalize_readings → agregação por sensor
-
+### 4️⃣ normalize_readings — Agregação por sensor  
 Transforma:
-
-{"sensor": "temp", "value": 23.1}
-{"sensor": "temp", "value": 23.3}
-{"sensor": "ph", "value": 7.1}
-
-
+```
+temp=20
+temp=25
+ph=7.1
+```
 em:
+```
+{ "temp": [20,25], "ph": [7.1] }
+```
 
-{
-    "temp": [23.1, 23.3],
-    "ph": [7.1]
-}
+---
 
-🧪 Testes Unitários (pytest)
+## ▶️ Como Usar
 
-A suíte de testes cobre:
-
-limpeza
-
-parsing
-
-normalização
-
-pipeline completo (process_file)
-
-Para rodar:
-
-pytest -q
-
-📦 Instalação
+### Instalar dependências:
+```
 pip install -r requirements.txt
+```
 
-▶️ Como executar
+### Executar:
+```python
 from core.process import process_file
-
 result = process_file("sample_data/sensor.txt")
 print(result)
+```
 
-🔍 Exemplo de saída
+---
+
+## 🧪 Testes
+Rodar todos os testes:
+```
+pytest -q
+```
+
+---
+
+## 📊 Exemplo de Entrada
+```
+temp=23.4
+hum=56
+ph=6.8
+erro invalido
+temp=25.1
+```
+
+## 📈 Exemplo de Saída
+```python
 {
-  "temp": [23.4],
-  "hum": [55.0],
+  "temp": [23.4, 25.1],
+  "hum": [56.0],
   "ph": [6.8]
 }
+```
 
-🧠 Por que este projeto importa?
+Erros:
+```python
+[
+  {
+    "linha": 4,
+    "conteudo": "erro invalido",
+    "reason": "expected_single_equal"
+  }
+]
+```
 
-Este pipeline demonstra:
+---
 
-engenharia real
-
-modularização profissional
-
-testes confiáveis
-
-previsibilidade nas etapas
-
-logging orientado a produção
-
-habilidade de manter e escalar código
-
-Este é o tipo de qualidade que empresas como NVIDIA, J&J e startups de IA buscam em estágios técnicos.
-
-✨ Autor
-
-Vitor Albuquerque
-Futuro GenAI Engineer • NeuroIA • MLOps • Python Engineer
+## ✨ Autor
+**Vitor Albuquerque**  
+Futuro GenAI Engineer • NeuroIA • MLOps • Edge AI • Python Software Engineer  
+GitHub: https://github.com/treino258  
