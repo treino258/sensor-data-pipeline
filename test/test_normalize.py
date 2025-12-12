@@ -1,4 +1,4 @@
-from core.normalize import normalize_readings
+from src.sensor_pipeline.core.normalize import normalize_readings
 
 
 def test_normalize_basic():

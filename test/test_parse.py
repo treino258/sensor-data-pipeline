@@ -1,4 +1,4 @@
-from core.parse import parse_lines_data
+from src.sensor_pipeline.core.parse import parse_lines_data
 
 def test_parse_valid_lines():
     """

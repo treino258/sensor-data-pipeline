@@ -1,5 +1,5 @@
 from typing import List, Tuple, Dict
-import logging
+from sensor_pipeline.logger import get_logger
 
 
 
@@ -23,7 +23,7 @@ def parse_lines_data(lines: List[str]) -> Tuple[List[Dict], List[Dict]]:
         lines: lista de linhas a serem analisadas.
         
     """
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
     
     logger.info("Iniciando análise e validação dos dados.")
     

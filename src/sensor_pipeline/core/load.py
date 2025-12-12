@@ -1,9 +1,9 @@
 
 from pathlib import Path
 from typing import List, Tuple, Union
-import logging
+from sensor_pipeline.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def load_file(file_path: str) -> List[str]:
     """

@@ -1,5 +1,5 @@
 from typing import List
-import logging
+from sensor_pipeline.logger import get_logger
 
 
 def clean_lines(lines: List[str]) -> List[str]:
@@ -15,7 +15,7 @@ def clean_lines(lines: List[str]) -> List[str]:
 
 
     """
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
     
     logger.info("Iniciando limpeza das linhas do arquivo.")
     

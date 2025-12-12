@@ -1,5 +1,5 @@
 from typing import List, Dict
-import logging
+from sensor_pipeline.logger import get_logger
 
 def normalize_readings(readings: List[Dict[str, float]]) -> Dict[str, List[float]]:
     """
@@ -22,7 +22,7 @@ def normalize_readings(readings: List[Dict[str, float]]) -> Dict[str, List[float
         readings: lista de dicionários contendo as leituras com chaves como nomes de variáveis
                   e valores como floats.
     """
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
     
     normalized_readings: Dict[str, List[float]] = {}
     

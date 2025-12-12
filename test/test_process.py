@@ -1,4 +1,4 @@
-from core.process import process_file
+from src.sensor_pipeline.core.process import process_file
 
 def test_process_file_basic(tmp_path):
     """

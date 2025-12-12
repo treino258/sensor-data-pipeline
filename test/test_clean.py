@@ -1,4 +1,4 @@
-from core.clean import clean_lines
+from src.sensor_pipeline.core.clean import clean_lines
 
 def test_clean_lines():
     """
