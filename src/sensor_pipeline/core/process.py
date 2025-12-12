@@ -26,8 +26,7 @@ def process_file(path: str) -> Dict[str, List[float]]:
           path: caminho para o arquivo de texto.
         
       """
-    correlation_id = uuid4().hex
-    correlation_id_ctx.set(correlation_id)
+    
     logger.info(f"Iniciando o processamento do arquivo: {path}")
     
     try:

@@ -18,13 +18,13 @@ if __name__ == "__main__":
     correlation_id_ctx.set(cid)
 
     # audit = evento de alto nível
-    audit(f"Pipeline iniciado for file={args.file}")
+    audit.info(f"Pipeline iniciado")
 
     logger.info("Starting pipeline via main")            # fluxo normal
     result = process_file(args.file)                    # process_file faz logs INFO
     logger.info("Done")                                 # fluxo normal
 
-    audit("Pipeline finalizado")
+    audit.info("Pipeline finalizado")
     print(result)
 
 

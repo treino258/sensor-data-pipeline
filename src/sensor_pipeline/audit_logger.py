@@ -1,21 +1,21 @@
+
 import logging
 import logging.handlers
-from .config import AUDIT_LOG_FILE
-from .logger_json import JsonFormatter
-
+from sensor_pipeline.config import AUDIT_LOG_FILE
+from sensor_pipeline.logger_json import JsonFormatter
 
 def get_audit_logger() -> logging.Logger:
-    logger = logging.getLogger("audit")
-    logger.setLevel(logging.INFO)
+    audit = logging.getLogger("audit")
+    audit.setLevel(logging.INFO)
 
-    if logger.handlers:
-        return logger
+    if audit.handlers:
+        return audit
 
     handler = logging.handlers.RotatingFileHandler(
         AUDIT_LOG_FILE, maxBytes=2_000_000, backupCount=5
     )
     handler.setFormatter(JsonFormatter())
+    handler.setLevel(logging.INFO)
 
-    logger.addHandler(handler)
-
-    return logger
+    audit.addHandler(handler)
+    return audit

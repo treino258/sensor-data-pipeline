@@ -4,25 +4,20 @@ from datetime import datetime
 from sensor_pipeline.context import correlation_id_ctx
 
 
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        """
-        Formata a mensagem de log em JSON.
-        
-        returns:
-            str: Mensagem de log formatada em JSON.
-        
-        args:
-            record (logging.LogRecord): Registro de log a ser formatado.
-            
-        """
-        
-        log_record = {
-            "timestamp": datetime.now().isoformat(),
+class JsonFormatter(logging.Formatter):
+    """
+    Formata logs como JSON em uma única linha.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        correlation_id = correlation_id_ctx.get()
+
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat(),
             "level": record.levelname,
-            "module": record.module,
+            "module": record.name,
             "message": record.getMessage(),
-            "correlation_id": correlation_id_ctx.get(None),
+            "correlation_id": correlation_id if correlation_id else None,
         }
-        
-        return json.dumps(log_record, ensure_ascii=False)
+
+        return json.dumps(log_data, ensure_ascii=False)
