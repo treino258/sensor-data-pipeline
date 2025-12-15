@@ -1,15 +1,26 @@
 
-import os
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
 
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-
-os.makedirs(LOG_DIR, exist_ok=True)
-
-APP_LOG_FILE = os.path.join(LOG_DIR, "app.log")
-ERROR_LOG_FILE = os.path.join(LOG_DIR, "errors.log")
-AUDIT_LOG_FILE = os.path.join(LOG_DIR, "audit.log")
-
-
+LOG_FILE = LOG_DIR / "pipeline.log"
 LOG_LEVEL = "INFO"
+
+
+SENSOR_THRESHOLDS = {
+    "sensor1": {
+        "max_invalid_ration": 0.1,
+    },
+    "sensor2": {
+        "max_invalid_ration": 0.2,
+    },
+    "sensor3": {
+        "max_invalid_ration": 0.0,
+    },
+    "sensor4": {
+        "max_invalid_ration": 0.3,
+    },
+}
+

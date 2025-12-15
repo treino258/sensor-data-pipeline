@@ -6,6 +6,7 @@ from sensor_pipeline.core.clean import clean_lines
 from sensor_pipeline.core.parse import parse_lines_data
 from sensor_pipeline.core.normalize import normalize_readings
 from sensor_pipeline.context import correlation_id_ctx
+from sensor_pipeline.valid_sensor_quality import validate_quality
 
 logger = get_logger(__name__)
 
@@ -51,9 +52,9 @@ def process_file(path: str) -> Dict[str, List[float]]:
         logger.info("Analisando e validando os dados.")
         # Analisar e validar dados
         valid_readings, invalid_readings = parse_lines_data(dataset_clean)
-        if invalid_readings:
-            logger.warning(f"Foram encontradas {len(invalid_readings)} leituras inválidas durante a análise.")
-        logger.info(f"Análise concluída. Leituras válidas: {len(valid_readings)}, Leituras inválidas: {len(invalid_readings)}")   
+        
+        validate_quality(valid_readings, invalid_readings)
+        
     except Exception as e:
         logger.error(f"Falha ao analisar os dados", exc_info=True)
         raise

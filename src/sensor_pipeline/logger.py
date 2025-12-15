@@ -1,54 +1,47 @@
 
 import logging
-import logging.handlers
+from logging.handlers import RotatingFileHandler
 from sensor_pipeline.config import (
-    APP_LOG_FILE,
-    ERROR_LOG_FILE,
-    AUDIT_LOG_FILE,
+    LOG_FILE,
     LOG_LEVEL,
 )
 from sensor_pipeline.logger_json import JsonFormatter
+from sensor_pipeline.context import correlation_id_ctx
 
 
-def _resolve_level(level):
-    import logging as _lg
-    if isinstance(level, int):
-        return level
-    if isinstance(level, str):
-        return getattr(_lg, level.upper(), _lg.INFO)
-    return _lg.INFO
+
+class ContextFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.correlation_id = correlation_id_ctx.get()
+        return True
 
 
 def get_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
-    logger.setLevel(_resolve_level(LOG_LEVEL))
+    logger.setLevel(LOG_LEVEL)
 
     if logger.handlers:
         return logger
 
-    json_formatter = JsonFormatter()
+    formatter = JsonFormatter()
 
-    # APP handler (INFO+)
-    app_handler = logging.handlers.RotatingFileHandler(
-        APP_LOG_FILE, maxBytes=2_000_000, backupCount=5
+    # Console
+    console = logging.StreamHandler()
+    console.setFormatter(formatter)
+    console.addFilter(ContextFilter())
+
+    # File (único arquivo)
+    file_handler = RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=10 * 1024 * 1024,
+        backupCount=5,
+        encoding="utf-8",
     )
-    app_handler.setLevel(_resolve_level(LOG_LEVEL))
-    app_handler.setFormatter(json_formatter)
+    file_handler.setFormatter(formatter)
+    file_handler.addFilter(ContextFilter())
 
-    # ERROR handler (ERROR+)
-    error_handler = logging.handlers.RotatingFileHandler(
-        ERROR_LOG_FILE, maxBytes=2_000_000, backupCount=5
-    )
-    error_handler.setLevel(logging.ERROR)
-    error_handler.setFormatter(json_formatter)
+    logger.addHandler(console)
+    logger.addHandler(file_handler)
 
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(_resolve_level(LOG_LEVEL))
-    console_handler.setFormatter(json_formatter)
-
-    logger.addHandler(app_handler)
-    logger.addHandler(error_handler)
-    logger.addHandler(console_handler)
-
+    logger.propagate = False
     return logger

@@ -1,9 +1,10 @@
 from typing import List, Tuple, Dict
+from collections import defaultdict
 from sensor_pipeline.logger import get_logger
 
+logger = get_logger(__name__)
 
-
-def parse_lines_data(lines: List[str]) -> Tuple[List[Dict], List[Dict]]:
+def parse_lines_data(lines: List[str]) -> Dict[str, dict[str, list]]:
     """
     
     Valida os seguintes tópicos de acordo com o dataset atual por linha:
@@ -13,32 +14,34 @@ def parse_lines_data(lines: List[str]) -> Tuple[List[Dict], List[Dict]]:
       - valor convertível para float
       - caracteres válidos
       - padrão “chave=valor”
+      - agrupa os dados válidos e inválidos em listas separadas.
 
     Returns:
-        Tuple[List[Dict], List[Dict]]: uma tupla contendo duas listas de dicionários.
-            A primeira lista contém os dados válidos.
-            A segunda lista contém os dados inválidos (linhas que não seguem o formato esperado).
+        Valida e agrupa leituras por sensor. O formato retornado é:
+    {
+        sensor: {
+            "valid": [float],
+            "invalid": [dict]
+        }
+    }
         
     Args:
         lines: lista de linhas a serem analisadas.
         
     """
-    logger = get_logger(__name__)
     
     logger.info("Iniciando análise e validação dos dados.")
     
-    valid_readings: List[Dict] = []
-    erros:List[Dict] = []
+    data = defaultdict(lambda: {"valid": [], "invalid": []})
  
     for index, line in enumerate(lines, start=1):
         
         if line.count('=') != 1:
-            erros.append({
-                "linha": index,
+            data["UNKNOWN"]["invalid"].append({
+                "line": index,
                 "conteudo": line,
-                "erro": "expected_single_equal"
+                "erro": "expected_single_equal_sign"
             })
-            
             continue
         
         chave, valor = line.split('=', 1)
@@ -47,7 +50,7 @@ def parse_lines_data(lines: List[str]) -> Tuple[List[Dict], List[Dict]]:
         
         # chave vazia
         if not chave:
-            erros.append({
+            data["UNKOWN"]["invalid"].append({
                 "linha": index,
                 "conteudo": line,
                 "erro": "empty_key"
@@ -56,7 +59,7 @@ def parse_lines_data(lines: List[str]) -> Tuple[List[Dict], List[Dict]]:
         
         # valor vazio
         if not valor:
-            erros.append({
+            data[chave]["invalid"].append({
                 "linha": index,
                 "conteudo": line,
                 "erro": "empty_value"
@@ -67,19 +70,15 @@ def parse_lines_data(lines: List[str]) -> Tuple[List[Dict], List[Dict]]:
         try:
             valor_float = float(valor)
         except ValueError:
-            erros.append({
+            data[chave]["invalid"].append({
                 "linha": index,
                 "conteudo": line,
                 "erro": "invalid_float_value"
             })
             continue
         
-        valid_readings.append({
-            "line": index,
-            "sensor": chave,
-            "value": valor_float
-        })
+        data[chave]["valid"].append(valor_float)
         
-        logger.info(f"Análise concluída. Leituras válidas: {len(valid_readings)}, Leituras inválidas: {len(erros)}")
+        logger.info(f"Parse concluído. Sensore detectado: {list(data.keys())}")
         
-    return valid_readings, erros
+    return dict[data]
