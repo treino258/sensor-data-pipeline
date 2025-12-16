@@ -44,13 +44,11 @@ def parse_lines_data(lines: List[str]) -> Dict[str, dict[str, list]]:
             })
             continue
         
-        chave, valor = line.split('=', 1)
-        chave = chave.strip()
-        valor = valor.strip()
+        chave, valor = map(str.strip, line.split("=", 1))
         
         # chave vazia
         if not chave:
-            data["UNKOWN"]["invalid"].append({
+            data["UNKNOWN"]["invalid"].append({
                 "linha": index,
                 "conteudo": line,
                 "erro": "empty_key"
@@ -79,6 +77,6 @@ def parse_lines_data(lines: List[str]) -> Dict[str, dict[str, list]]:
         
         data[chave]["valid"].append(valor_float)
         
-        logger.info(f"Parse concluído. Sensore detectado: {list(data.keys())}")
+    logger.info(f"Parse concluído. Sensore detectado: {list(data.keys())}")
         
-    return dict[data]
+    return dict(data)

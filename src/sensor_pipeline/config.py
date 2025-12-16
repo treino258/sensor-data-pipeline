@@ -10,6 +10,9 @@ LOG_LEVEL = "INFO"
 
 
 SENSOR_THRESHOLDS = {
+    "DEFAULT":{
+        "max_invalid_ration": 0.2,
+    },
     "sensor1": {
         "max_invalid_ration": 0.1,
     },

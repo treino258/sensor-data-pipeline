@@ -4,7 +4,7 @@ from sensor_pipeline.config import SENSOR_THRESHOLDS
 
 logger = get_logger(__name__)
 
-def validate_quality(valid_readings, invalid_readings):
+def validate_quality(parsed_data: dict) -> None:
     """
     Valida a qualidade dos dados de sensores com base em limites predefinidos. 
     
@@ -15,36 +15,51 @@ def validate_quality(valid_readings, invalid_readings):
     
     logger.info("Iniciando validação de qualidade por sensor.")
 
-    stats = defaultdict(lambda: {"valid": 0, "invalid": 0})
 
-    for r in valid_readings:
-        stats[r["sensor"]]["valid"] += 1
-
-    for r in invalid_readings:
-        sensor = r.get("sensor", "DEFAULT")
-        stats[sensor]["invalid"] += 1
-
-    for sensor, counts in stats.items():
-        total = counts["valid"] + counts["invalid"]
+    for sensor, data in parsed_data.items():
+        valid = len(data["valid"])
+        invalid = len(data["invalid"])
+        total = valid + invalid
+        
+        if sensor == "UNKNOWN":
+            logger.info("Ignorando sensor UNKNOWN na validação de qualidade")
+            continue
+        
         if total == 0:
+            logger.warning(f"Sensor {sensor} sem leituras")
             continue
 
-        ratio = counts["invalid"] / total
-        max_ratio = SENSOR_THRESHOLDS.get(
-            sensor, SENSOR_THRESHOLDS["DEFAULT"]
-        )["max_invalid_ratio"]
+        invalid_ratio = invalid / total
+        
+        thresholds = SENSOR_THRESHOLDS.get(
+            sensor,
+            SENSOR_THRESHOLDS["DEFAULT"]
+        )
+        
+        if not thresholds:
+            logger.warning(f"Sensor {sensor} sem thresholds definidos. Ignorado.")
+            continue
 
-        if ratio > max_ratio:
+        max_ratio = thresholds["max_invalid_ration"]
+        
+        
+        if invalid_ratio > max_ratio:
             logger.error(
-                f"Sensor {sensor}: {ratio:.1%} inválidas (limite {max_ratio:.1%})"
+                f"Sensor {sensor} com taxa inválida [invalid_ratio:.1%]"
+                f"(limite {max_ratio:.1%})"
             )
             raise ValueError(f"Qualidade insuficiente para sensor {sensor}")
-
-        elif ratio > max_ratio / 2:
+        
+        
+        elif invalid_ratio > max_ratio / 2:
             logger.warning(
-                f"Sensor {sensor}: {ratio:.1%} inválidas (próximo do limite)"
+                f"Sensor {sensor} próximo do limite ({invalid_ratio:.1%})"
             )
         else:
             logger.info(
-                f"Sensor {sensor}: qualidade ok ({ratio:.1%} inválidas)"
+                f"Sensor {sensor} dentro do esperado ({invalid_ratio:.1%})"
             )
+
+    logger.info("Validação de qualidade concluída.")
+            
+        

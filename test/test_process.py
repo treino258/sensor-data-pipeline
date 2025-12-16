@@ -1,27 +1,56 @@
 from src.sensor_pipeline.core.process import process_file
+import pytest
 
-def test_process_file_basic(tmp_path):
-    """
-    Cria um arquivo temporário e testa a função process_file para garantir que o arquivo seja processado corretamente.
-    
-    returns:
-        None    
+def test_process_file_happy_path(tmp_path):
+    content = """temp=25.0
+ph=7.1
+temp=26.5
+"""
+
+    file = tmp_path / "data.txt"
+    file.write_text(content)
+
+    result = process_file(str(file))
+
+    assert result["temp"]["raw"] == [25.0, 26.5]
+    assert result["ph"]["raw"] == [7.1]
+
+def test_process_file_with_invalid_lines(tmp_path):
+    content = """temp=20
+invalid_line
+ph=7
+"""
+
+    file = tmp_path / "data.txt"
+    file.write_text(content)
+
+    result = process_file(str(file))
+
+    assert result["temp"]["raw"] == [20]
+    assert result["ph"]["raw"] == [7]
+
+
+
+def test_process_file_quality_error(tmp_path):
+    content = """temp=10
+invalid
+invalid
+invalid
+"""
+
+    file = tmp_path / "data.txt"
+    file.write_text(content)
+
+    result = process_file(str(file))
+
+    # Como decidimos que o pipeline é tolerante:
+    assert "temp" in result
+    assert result["temp"]["raw"] == [10.0]
+
         
-    args:
-        tmp_path: caminho temporário para criar arquivos de teste.
-        
-    """
-    
-    # Criar um arquivo temporário com dados de teste
-    test_file = tmp_path / "test_data.txt"
-    test_file.write_text("temp=25.0\nph=7.1\ninvalid_line\n=something\nhumidity=55.5", encoding="utf-8")
-    
-    # Processar o arquivo
-    result = process_file(str(test_file))
-    
-    # Verificar o resultado
-    assert result == {
-        "temp": [25.0],
-        "ph": [7.1],
-        "humidity": [55.5]
-    }
+def test_process_file_empty(tmp_path):
+    file = tmp_path / "empty.txt"
+    file.write_text("")
+
+    with pytest.raises(ValueError):
+        process_file(str(file))

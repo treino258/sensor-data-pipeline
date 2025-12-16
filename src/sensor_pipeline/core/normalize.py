@@ -1,40 +1,60 @@
-from typing import List, Dict
+from typing import Dict, List
 from sensor_pipeline.logger import get_logger
 
-def normalize_readings(readings: List[Dict[str, float]]) -> Dict[str, List[float]]:
+logger = get_logger(__name__)
+
+
+def normalize_readings(parsed_data: Dict[str, Dict[str, List[float]]]) -> Dict[str, Dict[str, List[float]]]:
     """
-    Normaliza os valores das leituras.
-        - pegar uma lista de leituras (sensor, value)
-        
-        - agrupa por sensor
+    Normaliza os valores das leituras por sensor preservando os valores brutos.
 
-        - acumula valores em listas
+    Input:
+    {
+        sensor: {
+            "valid": [float, ...],
+            "invalid": [...]
+        }
+    }
 
-        - garante estrutura consistente para processamento posterior
-
-        - não perder a ordem
-
-    Returns:
-        Dict[str, List[float]]: um dicionário onde as chaves são os nomes das variáveis
-        e os valores são listas de valores normalizados correspondentes.
-
-    Args:
-        readings: lista de dicionários contendo as leituras com chaves como nomes de variáveis
-                  e valores como floats.
+    Output:
+    {
+        sensor: {
+            "raw": [...],
+            "normalized": [...]
+        }
+    }
     """
-    logger = get_logger(__name__)
-    
-    normalized_readings: Dict[str, List[float]] = {}
-    
-    for entry in readings:
-        sensor = entry["sensor"]
-        valor = entry["value"]
-        
-        if sensor not in normalized_readings:
-            normalized_readings[sensor] = []
-            
-        normalized_readings[sensor].append(valor)
-        
-    logger.info(f"Normalização concluída. Sensores normalizados: {list(normalized_readings.keys())}")
-    
-    return normalized_readings
+    logger.info("Iniciando normalização das leituras.")
+
+    result: Dict[str, Dict[str, List[float]]] = {}
+
+    for sensor, data in parsed_data.items():
+        raw_values = data.get("valid", [])
+
+        if not raw_values:
+            logger.warning(f"Sensor {sensor} não possui leituras válidas para normalização.")
+            result[sensor] = {"raw": [], "normalized": []}
+            continue
+
+        min_v = min(raw_values)
+        max_v = max(raw_values)
+
+        if min_v == max_v:
+            normalized = [0.0 for _ in raw_values]
+        else:
+            normalized = [
+                (v - min_v) / (max_v - min_v)
+                for v in raw_values
+            ]
+
+        result[sensor] = {
+            "raw": raw_values,
+            "normalized": normalized
+        }
+
+        logger.info(
+            f"Sensor {sensor} normalizado ({len(raw_values)} valores)."
+        )
+
+    logger.info("Normalização concluída.")
+    return result

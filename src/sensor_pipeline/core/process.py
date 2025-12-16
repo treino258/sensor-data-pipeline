@@ -7,6 +7,9 @@ from sensor_pipeline.core.parse import parse_lines_data
 from sensor_pipeline.core.normalize import normalize_readings
 from sensor_pipeline.context import correlation_id_ctx
 from sensor_pipeline.valid_sensor_quality import validate_quality
+from sensor_pipeline.metrics.pipeline_metrics import compute_metrics
+from sensor_pipeline.utils.timing import measure_time
+
 
 logger = get_logger(__name__)
 
@@ -28,45 +31,39 @@ def process_file(path: str) -> Dict[str, List[float]]:
         
       """
     
-    logger.info(f"Iniciando o processamento do arquivo: {path}")
+    logger.info(f"Iniciando o processamento do arquivo:", extra={"path": path})
     
-    try:
-        logger.info("Carregando o arquivo.")
-        # Carregar o arquivo
-        dataset_load = load_file(path)
-        logger.info(f"Arquivo carregado. Total de linhas: {len(dataset_load)}")
-    except Exception as e:
-        logger.error(f"Falha ao carregar o arquivo", exc_info=True)
-        raise
     
-    try:
-        # Limpar linhas
-        logger.info("Limpando as linhas do arquivo.")
-        dataset_clean = clean_lines(dataset_load)
-        logger.info(f"Linhas limpas. Total de linhas após limpeza: {len(dataset_clean)}")
-    except Exception as e:
-        logger.error(f"Falha ao limpar as linhas do arquivo", exc_info=True)
-        raise
+    # Carregar o arquivo
+    dataset_load = load_file(path)
+    logger.info(f"Arquivo carregado. Total de linhas", extra={"lines": len(dataset_load)})
     
-    try:
-        logger.info("Analisando e validando os dados.")
+    
+    
+
+    # Limpar linhas
+    dataset_clean = clean_lines(dataset_load)
+    logger.info(f"Linhas limpas. Total de linhas após limpeza", extra={"lines": len(dataset_clean)})
+    
+    
+    with measure_time() as elapsed:
         # Analisar e validar dados
-        valid_readings, invalid_readings = parse_lines_data(dataset_clean)
+        parsed_data = parse_lines_data(dataset_clean)
         
-        validate_quality(valid_readings, invalid_readings)
+        validate_quality(parsed_data)
         
-    except Exception as e:
-        logger.error(f"Falha ao analisar os dados", exc_info=True)
-        raise
+    logger.info("Parse e validação concluidos")
         
-    try:
-        logger.info("Normalizando as leituras válidas.")
-        # Normalizar leituras válidas
-        normalized_data = normalize_readings(valid_readings)
-        logger.info(f"Leituras normalizadas para {len(normalized_data)} sensores.")
-    except Exception as e:
-        logger.error(f"Falha ao normalizar os dados", exc_info=True)
-        raise
+        
+        
+    metrics = compute_metrics(parsed_data)
+    logger.info("Métricas computadas", extra={"metrics": metrics})
+           
+    
+    # Normalizar leituras válidas
+    normalized_data = normalize_readings(parsed_data)
+    logger.info(f"Normalização concluida", extra={"sensores": len(normalized_data)})    
+
     
     logger.info(f"Processamento concluído com sucesso.")
         

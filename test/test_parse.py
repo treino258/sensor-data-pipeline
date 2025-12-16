@@ -12,14 +12,13 @@ def test_parse_valid_lines():
     
     """
     lines = ["temp=25.0"]
-    valid, errors = parse_lines_data(lines)
+    parsed = parse_lines_data(lines)
     
     
     
-    assert len(valid) == 1
-    assert valid[0]["sensor"] == "temp"
-    assert valid[0]["value"] == 25.0
-    assert len(errors) == 0
+    assert "temp" in parsed
+    assert parsed["temp"]["valid"] == [25.0]
+    assert parsed["temp"]["invalid"] == []
 
 def test_parse_invalid_no_equal():
     """
@@ -33,50 +32,13 @@ def test_parse_invalid_no_equal():
     """
     
     lines = ["temp25"]
-    valid, errors = parse_lines_data(lines)
+    parsed = parse_lines_data(lines)
     
-    assert len(valid) == 0
-    assert len(errors) == 1
-    assert errors[0]["erro"] == "expected_single_equal"
+    assert "UNKNOWN" in parsed
+    assert len(parsed["UNKNOWN"]["invalid"]) == 1
+    assert parsed["UNKNOWN"]["invalid"][0]["erro"] == "expected_single_equal_sign"
  
-"""
-def test_parse_invalid_empty_key():
-    
-    Testa a função parse_lines_data para garantir que linhas com chave vazia sejam identificadas como inválidas.
-    
-    returns:
-        None
-        
-    args:
-        None
-    
-    
-    lines = ["=25.0"]
-    valid, errors = parse_lines_data(lines)
-    
-    assert len(valid) == 0
-    assert len(errors) == 1
-    assert errors[0]["erro"] == "empty_key"
-"""
-"""
-def test_parse_invalid_float_value():
-    
-    Testa a função parse_lines_data para garantir que linhas com valor não convertível para float sejam identificadas como inválidas.
-    
-    returns:
-        None
-        
-    args:
-        None
-    
-    lines = ["temp=abc"]
-    valid, errors = parse_lines_data(lines)
-    
-    assert len(valid) == 0
-    assert len(errors) == 1
-    assert errors[0]["reason"] == "invalid_float_value"
 
-    """
 
 def test_parse_mixed_lines():
     """
@@ -97,10 +59,16 @@ def test_parse_mixed_lines():
         "y=abc"
     ]
     
-    valid, errors = parse_lines_data(lines)
+    parsed = parse_lines_data(lines)
     
-    assert len(valid) == 2
-    assert len(errors) == 4
+    assert parsed["temp"]["valid"] == [20.0]
+    assert parsed["ph"]["valid"] == [7.1]
+
+    total_invalid = sum(
+        len(sensor["invalid"]) for sensor in parsed.values()
+    )
+
+    assert total_invalid == 4
     
     
     
