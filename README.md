@@ -1,5 +1,5 @@
 # 📡 Sensor Data Processing Pipeline
-### Pipeline profissional para leitura, limpeza, validação e normalização de dados de sensores  
+### Pipeline de processamento de dados de sensores, projetado com foco em **engenharia**, **qualidade de dados**, **observabilidade** e **testabilidade**, simulando cenários reais de ingestão imperfeita.  
 ![status](https://img.shields.io/badge/status-stable-brightgreen)  ![python](https://img.shields.io/badge/python-3.10%2B-blue)
  
 ![tests](https://img.shields.io/badge/tests-pytest-blue) ![license](https://img.shields.io/badge/license-MIT-lightgrey)
@@ -8,128 +8,210 @@
 
 
 ## 🧠 Visão Geral
-Este projeto implementa um pipeline completo, modular e profissional para processamento de dados de sensores.
+Este projeto implementa um pipeline que processa leituras de sensores a partir de arquivos de texto no formato:
 
-Ele segue padrões reais de engenharia usados em MLOps, Sistemas de telemetria, Edge AI, Observabilidade e pré-processamento para ML.
+```
+sensor=value
+```
 
-O sistema recebe leituras brutas e passa por 4 estágios:
-1. Carregamento do arquivo  
-2. Limpeza  
-3. Parsing e validação  
-4. Normalização
+Exemplo:
+
+```
+sensor1=10
+sensor2=20
+sensor1=15
+sensor3=9.5
+```
+
+O pipeline é **tolerante a falhas**, **auditável** e **configurável por sensor**, permitindo que dados inválidos sejam analisados sem interromper toda a execução.
 
 ---
 
-## ⚙️ Arquitetura
+## 🧱 Arquitetura do Pipeline
+
+Fluxo lógico do processamento:
+
 ```
-core/
-│── load.py
-│── clean.py
-│── parse.py
-│── normalize.py
-│── process.py
-tests/
-│── test_clean.py
-│── test_parse.py
-│── test_normalize.py
-│── test_process.py
-sample_data/
-│── sensor.txt
-```
-
----
-
-## 🔍 Etapas do Pipeline
-
-### 1️⃣ load_file — Leitura segura  
-- valida existência  
-- valida arquivo vazio  
-- abre em UTF-8  
-- não altera conteúdo  
-
-### 2️⃣ clean_lines — Limpeza determinística  
-- remove espaços  
-- remove linhas vazias  
-- preserva ordem  
-
-### 3️⃣ parse_lines_data — Validação sintática  
-Valida:
-- 1 "="  
-- chave não vazia  
-- valor não vazio  
-- float válido  
-- formato chave=valor  
-
-Retorna `valid_readings` e `errors`.
-
-### 4️⃣ normalize_readings — Agregação por sensor  
-Transforma:
-```
-temp=20
-temp=25
-ph=7.1
-```
-em:
-```
-{ "temp": [20,25], "ph": [7.1] }
+File → Clean → Parse → Validate Quality → Metrics → Normalize
 ```
 
 ---
 
-## ▶️ Como Usar
+## 1️⃣ Load
+Responsável por carregar o arquivo do disco.
+- Falha crítica: arquivo inexistente ou inacessível
+- Interrompe o pipeline em caso de erro
 
-### Instalar dependências:
-```
-pip install -r requirements.txt
-```
+---
 
-### Executar:
+## 2️⃣ Clean
+Responsável por:
+- Remover linhas vazias
+- Normalizar espaços
+- Garantir formato básico
+
+Não valida conteúdo semântico.
+
+---
+
+## 3️⃣ Parse
+
+Responsabilidade:
+- Interpretar linhas no padrão `chave=valor`
+- Classificar leituras em **válidas** e **inválidas**
+- Agrupar por sensor
+- Nunca interrompe o pipeline
+
+Formato de saída:
+
 ```python
-from core.process import process_file
-result = process_file("sample_data/sensor.txt")
-print(result)
+{
+  "sensor": {
+    "valid": [float],
+    "invalid": [dict]
+  }
+}
 ```
+
+Leituras inválidas são preservadas para:
+- auditoria
+- métricas
+- análise de qualidade
+
+Linhas sem sensor identificável são agrupadas como `UNKNOWN`.
+
+---
+
+## 4️⃣ Validação de Qualidade
+
+Responsável por avaliar a qualidade dos dados **por sensor**, utilizando limites configuráveis.
+
+Exemplo de configuração:
+
+```python
+SENSOR_THRESHOLDS = {
+    "sensor1": {"max_invalid_ratio": 0.1},
+    "sensor2": {"max_invalid_ratio": 0.2},
+    "DEFAULT": {"max_invalid_ratio": 0.3},
+}
+```
+
+Regras:
+- Sensores usam thresholds específicos quando disponíveis
+- Caso contrário, utilizam `DEFAULT`
+- Sensor `UNKNOWN` não quebra o pipeline
+- Pipeline só falha quando a qualidade ultrapassa limites críticos
+
+---
+
+## 5️⃣ Métricas
+
+Responsabilidade:
+- Observar o estado do pipeline
+- Gerar indicadores
+- Não transformar dados
+
+Exemplos:
+- Total de sensores
+- Total de leituras
+- Taxa de invalidez
+
+---
+
+## 6️⃣ Normalização
+
+Responsável por:
+- Normalizar valores válidos
+- Preservar valores crus
+- Garantir rastreabilidade
+
+Formato de saída:
+
+```python
+{
+  "sensor": {
+    "raw": [...],
+    "normalized": [...]
+  }
+}
+```
+
+Essa decisão permite:
+- auditoria
+- reprocessamento
+- debug avançado
+
+---
+
+## 📊 Observabilidade e Logging
+
+- Logs estruturados em JSON
+- Uso de `correlation_id` via `contextvars`
+- Todos os logs de uma execução podem ser correlacionados
+
+Formato:
+
+```json
+{
+  "timestamp": "...",
+  "level": "INFO",
+  "module": "...",
+  "message": "...",
+  "correlation_id": "..."
+}
+```
+
+Decisões:
+- Um único stream de logs
+- Segmentação via `logger.name`, `level` e `correlation_id`
+- Compatível com ELK / Datadog / CloudWatch
 
 ---
 
 ## 🧪 Testes
-Rodar todos os testes:
-```
-pytest -q
-```
+
+Os testes validam **comportamento**, não implementação.
+
+Cobertura:
+- parsing
+- tolerância a falhas
+- qualidade de dados
+- normalização
+- pipeline completo
 
 ---
 
-## 📊 Exemplo de Entrada
-```
-temp=23.4
-hum=56
-ph=6.8
-erro invalido
-temp=25.1
-```
+## ⚠️ Limitações Conhecidas
 
-## 📈 Exemplo de Saída
-```python
-{
-  "temp": [23.4, 25.1],
-  "hum": [56.0],
-  "ph": [6.8]
-}
-```
+- Não persiste saída
+- Input apenas via arquivo texto
+- Thresholds simples
+- Sem paralelismo
 
-Erros:
-```python
-[
-  {
-    "linha": 4,
-    "conteudo": "erro invalido",
-    "reason": "expected_single_equal"
-  }
-]
-```
+Limitações são intencionais.
 
 ---
+
+## 🚀 Possíveis Evoluções
+
+- Persistência (CSV, Parquet, DB)
+- Streaming (Kafka)
+- Observabilidade com OpenTelemetry
+- Validações estatísticas avançadas
+- Novos formatos de entrada
+
+---
+
+## 🧠 Filosofia
+
+Este projeto prioriza:
+- Clareza de responsabilidades
+- Contratos explícitos
+- Tolerância a falhas
+- Decisões técnicas justificadas
+
+Não foi feito para ser simples, mas para ser correto.
+
 
 ## ✨ Autor
 **Vitor Albuquerque**  
