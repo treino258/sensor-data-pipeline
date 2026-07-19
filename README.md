@@ -216,4 +216,4 @@ Não foi feito para ser simples, mas para ser correto.
 ## ✨ Autor
 **Vitor Albuquerque**  
 Futuro GenAI Engineer • NeuroIA • MLOps • Edge AI • Python Software Engineer  
-GitHub: https://github.com/treino258  
+GitHub: https://github.com/Vitor-Albuqe 
